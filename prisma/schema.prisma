@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  customer    Customer?
+  restaurant  Restaurant?
+  driver      Driver?
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  fullName  String
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id])
+  orders    Order[]
+}
+
+model Restaurant {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  name        String
+  description String?
+  address     String
+  phone       String
+  cuisineType String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id])
+  menu        MenuItem[]
+  orders      Order[]
+}
+
+model Driver {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  fullName     String
+  phone        String
+  vehicleType  String
+  city         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user         User     @relation(fields: [userId], references: [id])
+  deliveries   Order[]
+}
+
+model MenuItem {
+  id           String   @id @default(uuid())
+  restaurantId String
+  name         String
+  description  String?
+  price        Float
+  category     String
+  isAvailable  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  orderItems   OrderItem[]
+}
+
+model Order {
+  id           String    @id @default(uuid())
+  customerId   String
+  restaurantId String
+  driverId     String?
+  status       OrderStatus @default(PENDING)
+  total        Float
+  address      String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  customer     Customer    @relation(fields: [customerId], references: [id])
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  driver       Driver?     @relation(fields: [driverId], references: [id])
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  menuItemId  String
+  quantity    Int
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  order       Order     @relation(fields: [orderId], references: [id])
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id])
+}
+
+enum Role {
+  CUSTOMER
+  RESTAURANT
+  DRIVER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  IN_DELIVERY
+  DELIVERED
+  CANCELLED
+}
